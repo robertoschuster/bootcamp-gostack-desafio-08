@@ -1,8 +1,7 @@
 import React from 'react';
-import PropTypes from 'prop-types';
+// import PropTypes from 'prop-types';
 
-import { connect } from 'react-redux';
-import { bindActionCreators } from 'redux';
+import { useSelector, useDispatch } from 'react-redux';
 import * as CartActions from '../../store/modules/cart/actions';
 
 import {
@@ -35,24 +34,36 @@ import {
 } from './styles';
 import { formatPrice } from '../../utils/formatt';
 
-function Cart({ cart, total, updateAmountRequest, removeFromCart }) {
+export default function Cart() {
+  const dispatch = useDispatch();
+  const cart = useSelector((state) =>
+    state.cart.map((product) => ({
+      ...product,
+      priceFormatted: formatPrice(product.price),
+      subtotal: formatPrice(product.price * product.amount),
+    }))
+  );
+
+  const total = useSelector((state) =>
+    formatPrice(
+      state.cart.reduce((totalSum, product) => {
+        return totalSum + product.price * product.amount;
+      }, 0)
+    )
+  );
+
   function increment(product) {
-    updateAmountRequest(product.id, product.amount + 1);
+    dispatch(CartActions.updateAmountRequest(product.id, product.amount + 1));
   }
 
   function decrement(product) {
-    updateAmountRequest(product.id, product.amount - 1);
+    dispatch(CartActions.updateAmountRequest(product.id, product.amount - 1));
   }
 
   function loadCart() {
     return (
       <Container>
         <ProductList
-          // onEndReachedThreshold={0.2} // Carrega mais itens quando chegar em 20% do fim
-          // onEndReached={this.handleLoadMore} // Função que carrega mais itens
-          // ListFooterComponent={this.renderFooter}
-          // onRefresh={this.refreshList} // Função dispara quando o usuário arrasta a lista pra baixo
-          // refreshing={loading}
           data={cart}
           keyExtractor={(item) => String(item.id)}
           renderItem={({ item }) => {
@@ -64,7 +75,10 @@ function Cart({ cart, total, updateAmountRequest, removeFromCart }) {
                     <ProductTitle>{item.title}</ProductTitle>
                     <ProductPrice>{item.priceFormatted}</ProductPrice>
                   </ProductText>
-                  <ProductRemove onPress={() => removeFromCart(item.id)}>
+                  <ProductRemove
+                    onPress={() =>
+                      dispatch(CartActions.removeFromCart(item.id))
+                    }>
                     <ProductRemoveIcon />
                   </ProductRemove>
                 </ProductInfo>
@@ -108,35 +122,12 @@ function Cart({ cart, total, updateAmountRequest, removeFromCart }) {
   return cart.length > 0 ? loadCart() : loadEmptyCart();
 }
 
-Cart.propTypes = {
-  navigation: PropTypes.shape({
-    getParam: PropTypes.func.isRequired,
-  }).isRequired,
-  cart: PropTypes.arrayOf(PropTypes.shape()).isRequired,
-  total: PropTypes.string.isRequired,
-  updateAmountRequest: PropTypes.func.isRequired,
-  removeFromCart: PropTypes.func.isRequired,
-};
-
-Cart.navigationOptions = {
-  title: 'Carrinho',
-};
-
-const mapStateToProps = (state) => ({
-  cart: state.cart.map((product) => ({
-    ...product,
-    priceFormatted: formatPrice(product.price),
-    subtotal: formatPrice(product.price * product.amount),
-  })),
-
-  total: formatPrice(
-    state.cart.reduce((total, product) => {
-      return total + product.price * product.amount;
-    }, 0)
-  ),
-});
-
-const mapDispatchToProps = (dispatch) =>
-  bindActionCreators(CartActions, dispatch);
-
-export default connect(mapStateToProps, mapDispatchToProps)(Cart);
+// Cart.propTypes = {
+//   navigation: PropTypes.shape({
+//     getParam: PropTypes.func.isRequired,
+//   }).isRequired,
+//   cart: PropTypes.arrayOf(PropTypes.shape()).isRequired,
+//   total: PropTypes.string.isRequired,
+//   updateAmountRequest: PropTypes.func.isRequired,
+//   removeFromCart: PropTypes.func.isRequired,
+// };
